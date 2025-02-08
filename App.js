@@ -2,20 +2,11 @@ import React, { useState, useEffect } from "react";
 import { View, Text, ScrollView, Switch, Button, TextInput, StyleSheet } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const itemsList = [
-  { id: 1, name: "list 1", weight: 0 },
-  { id: 2, name: "list 2", weight: 0 },
-  { id: 3, name: "list 3", weight: 0 },
-  { id: 4, name: "list 4", weight: 0 },
-  { id: 5, name: "list 5", weight: 0 },
-];
-
 export default function App() {
-  const [items, setItems] = useState(
-    itemsList.map((item) => ({ ...item, packed: false, inputWeight: item.weight.toString() }))
-  );
+  const [items, setItems] = useState([]);
   const [packedHistory, setPackedHistory] = useState([]);
   const [weightLimit, setWeightLimit] = useState(50);
+  const [newItemName, setNewItemName] = useState("");
 
   useEffect(() => {
     loadPackedHistory();
@@ -59,9 +50,28 @@ export default function App() {
   };
 
   const resetChecklist = () => {
-    setItems(itemsList.map((item) => ({ ...item, packed: false, inputWeight: item.weight.toString() })));
+    setItems([]);
     setPackedHistory([]);
     savePackedHistory([]);
+  };
+
+  const addItem = () => {
+    if (newItemName) {
+      const newItem = {
+        id: Date.now(),
+        name: newItemName,
+        weight: 0,
+        packed: false,
+        inputWeight: "0",
+      };
+      setItems([...items, newItem]);
+      setNewItemName("");
+    }
+  };
+
+  const removeItem = (id) => {
+    const updatedItems = items.filter((item) => item.id !== id);
+    setItems(updatedItems);
   };
 
   const totalWeight = items.reduce((sum, item) => (item.packed ? sum + item.weight : sum), 0);
@@ -78,10 +88,18 @@ export default function App() {
             style={styles.input}
             keyboardType="numeric"
             value={weightLimit.toString()}
-            onChangeText={(text) => setWeightLimit(parseFloat(text) || 50)}
+            onChangeText={(text) => setWeightLimit(parseFloat(text) || "")}
           />
         </View>
       </View>
+
+      <TextInput
+        style={styles.newinput}
+        placeholder="Enter Item Name"
+        value={newItemName}
+        onChangeText={setNewItemName}
+      />
+      <Button title="Add Item" onPress={addItem} />
 
       <ScrollView style={styles.scrollContainer}>
         {items.map((item) => (
@@ -94,6 +112,7 @@ export default function App() {
               onChangeText={(text) => updateWeight(item.id, text)}
             />
             <Switch value={item.packed} onValueChange={() => togglePacked(item.id)} />
+            <Button title="Remove" onPress={() => removeItem(item.id)} />
           </View>
         ))}
       </ScrollView>
@@ -164,6 +183,10 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginLeft: "auto",
     marginRight: 10,
+  },
+  newinput: {
+    backgroundColor: "#ffffff",
+    textAlign: "center",
   },
   totalWeight: {
     fontSize: 18,
