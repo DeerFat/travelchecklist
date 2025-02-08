@@ -1,18 +1,18 @@
-import React, {useState, useEffect} from "react";
-import {View, Text, ScrollView, Switch, Button, StyleSheet} from "react-native";
+import React, { useState, useEffect } from "react";
+import { View, Text, ScrollView, Switch, Button, TextInput, StyleSheet } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const itemsList = [
-  { id: 1, name: "list 1" },
-  { id: 2, name: "list 2" },
-  { id: 3, name: "list 3" },
-  { id: 4, name: "list 4" },
-  { id: 5, name: "list 5" },
+  { id: 1, name: "list 1", weight: 0 },
+  { id: 2, name: "list 2", weight: 0 },
+  { id: 3, name: "list 3", weight: 0 },
+  { id: 4, name: "list 4", weight: 0 },
+  { id: 5, name: "list 5", weight: 0 },
 ];
 
 export default function App() {
   const [items, setItems] = useState(
-    itemsList.map((item) => ({ ...item, packed: false }))
+    itemsList.map((item) => ({ ...item, packed: false, inputWeight: item.weight.toString() }))
   );
   const [packedHistory, setPackedHistory] = useState([]);
 
@@ -50,25 +50,40 @@ export default function App() {
     savePackedHistory(packedItems);
   };
 
+  const updateWeight = (id, weight) => {
+    const updatedItems = items.map((item) =>
+      item.id === id ? { ...item, weight: parseFloat(weight) || 0, inputWeight: weight } : item
+    );
+    setItems(updatedItems);
+  };
+
   const resetChecklist = () => {
-    setItems(itemsList.map((item) => ({ ...item, packed: false })));
+    setItems(itemsList.map((item) => ({ ...item, packed: false, inputWeight: item.weight.toString() })));
     setPackedHistory([]);
     savePackedHistory([]);
   };
 
+  const totalWeight = items.reduce((sum, item) => (item.packed ? sum + item.weight : sum), 0);
+
   return (
     <View style={styles.container}>
       <Text style={styles.header}>Assignent 1</Text>
-
       <ScrollView style={styles.scrollContainer}>
         {items.map((item) => (
           <View key={item.id} style={styles.item}>
             <Text>{item.name}</Text>
+            <TextInput
+              style={styles.input}
+              keyboardType="numeric"
+              value={item.inputWeight}
+              onChangeText={(text) => updateWeight(item.id, text)}
+            />
             <Switch value={item.packed} onValueChange={() => togglePacked(item.id)} />
           </View>
         ))}
       </ScrollView>
-
+      <Text style={styles.totalWeight}>Total Packed Weight: {totalWeight.toFixed(2)}lb</Text>
+      {totalWeight > 50 && <Text style={styles.warning}>⚠️ Overweight Limit!</Text>}
       <Button title="Reset Checklist" onPress={resetChecklist} />
     </View>
   );
@@ -96,5 +111,27 @@ const styles = StyleSheet.create({
     padding: 15,
     backgroundColor: "#fff",
     marginBottom: 10,
+    borderRadius: 5
+  },
+  input: {
+    width: 60,
+    borderColor: "gray",
+    backgroundColor: "#ededed",
+    borderRadius: 5,
+    paddingHorizontal: 5,
+    textAlign: "center",
+    marginLeft: "auto",
+    marginRight: 10
+  },
+  totalWeight: {
+    fontSize: 18,
+    fontWeight: "bold",
+    textAlign: "center"
+  },
+  warning: {
+    fontSize: 16,
+    color: "red",
+    textAlign: "center",
+    marginBottom: 10
   },
 });
